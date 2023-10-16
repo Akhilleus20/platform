@@ -5,57 +5,26 @@
     "projectType": "application",
     "targets": {
         "build": {
-            "executor": "@nx/esbuild:esbuild",
+            "executor": "@nx/js:swc",
             "outputs": [
                 "{options.outputPath}"
             ],
-            "defaultConfiguration": "production",
             "options": {
-                "platform": "node",
                 "outputPath": "dist/apps/cli",
-                "format": [
-                    "cjs"
-                ],
-                "bundle": false,
-                "main": "apps/cli/src/index.ts",
                 "tsConfig": "apps/cli/tsconfig.app.json",
+                "packageJson": "apps/cli/package.json",
+                "main": "apps/cli/src/index.ts",
                 "assets": [
-                    "apps/cli/src/assets"
-                ],
-                "generatePackageJson": true,
-                "esbuildOptions": {
-                    "sourcemap": true,
-                    "outExtension": {
-                        ".js": ".js"
-                    }
-                }
-            },
-            "configurations": {
-                "development": {},
-                "production": {
-                    "generateLockfile": true,
-                    "esbuildOptions": {
-                        "sourcemap": false,
-                        "outExtension": {
-                            ".js": ".js"
-                        }
-                    }
-                }
-            }
-        },
-        "serve": {
-            "executor": "@nx/js:node",
-            "defaultConfiguration": "development",
-            "options": {
-                "buildTarget": "cli:build"
-            },
-            "configurations": {
-                "development": {
-                    "buildTarget": "cli:build:development"
-                },
-                "production": {
-                    "buildTarget": "cli:build:production"
-                }
+                    {
+                        "glob": "**/(\\.*|*)",
+                        "input": "apps/cli/template",
+                        "output": "template",
+                        "ignore": []
+                    },
+                    "apps/cli/template/.gitignore",
+                    "apps/cli/bin/*",
+                    "apps/cli/*.md"
+                ]
             }
         },
         "lint": {
@@ -78,19 +47,32 @@
             "options": {
                 "jestConfig": "apps/cli/jest.config.ts",
                 "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "codeCoverage": true
-                }
             }
         },
-        "docker-build": {
+        "version": {
+            "executor": "@jscutlery/semver:version",
+            "options": {
+                "preset": "conventional",
+                "trackDeps": true,
+                "changelogHeader": "# Changelog",
+                "tagPrefix": "{projectName}@",
+                "commitMessageFormat": "chore({projectName}): Release version ${version}",
+                "postTargets": [
+                    "create:build"
+                ]
+            }
+        },
+        "publish": {
             "dependsOn": [
                 "build"
             ],
-            "command": "docker build -f apps/cli/Dockerfile . -t cli"
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "dist/apps/cli",
+                "commands": [
+                    "yarn publish --access public"
+                ]
+            }
         }
     },
     "tags": []

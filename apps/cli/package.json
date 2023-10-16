@@ -1,6 +1,10 @@
 {
     "name": "@klave/cli",
+    "description": "The Klave Command Line Interface lets you interact with your Klave apps from the command line",
     "version": "0.0.1",
-    "type": "commonjs",
-    "license": "MIT"
+    "license": "MIT",
+    "private": false,
+    "bin": {
+        "klave": "./bin/klave"
+    }
 }
