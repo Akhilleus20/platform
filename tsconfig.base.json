@@ -17,10 +17,7 @@
         "importHelpers": true,
         "target": "es2021",
         "module": "esnext",
-        "lib": [
-            "es2021",
-            "dom"
-        ],
+        "lib": ["es2021", "dom"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
         "forceConsistentCasingInFileNames": true,
@@ -29,34 +26,15 @@
         "strictNullChecks": true,
         "baseUrl": ".",
         "paths": {
-            "@klave/api": [
-                "libs/api/src/index.ts"
-            ],
-            "@klave/compiler": [
-                "libs/compiler/src/index.ts"
-            ],
-            "@klave/db": [
-                "libs/db/src/index.ts"
-            ],
-            "@klave/deployer": [
-                "libs/deployer/src/index.ts"
-            ],
-            "@klave/providers": [
-                "libs/providers/src/index.ts"
-            ],
-            "@klave/pruner": [
-                "libs/pruner/src/index.ts"
-            ],
-            "@klave/sdk": [
-                "libs/sdk/src/index.ts"
-            ]
+            "@klave/api": ["libs/api/src/index.ts"],
+            "@klave/compiler": ["libs/compiler/src/index.ts"],
+            "@klave/db": ["libs/db/src/index.ts"],
+            "@klave/deployer": ["libs/deployer/src/index.ts"],
+            "@klave/providers": ["libs/providers/src/index.ts"],
+            "@klave/pruner": ["libs/pruner/src/index.ts"],
+            "@klave/sdk": ["libs/sdk/src/index.ts"]
         }
     },
-    "include": [
-        "package.json"
-    ],
-    "exclude": [
-        "node_modules",
-        "tmp"
-    ]
+    "include": ["package.json"],
+    "exclude": ["node_modules", "tmp"]
 }
