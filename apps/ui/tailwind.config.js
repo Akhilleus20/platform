@@ -3,6 +3,7 @@ const { createGlobPatternsForDependencies } = require('@nx/react/tailwind');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    presets: [require('../../tailwind.preset.js')],
     content: [
         join(
             __dirname,
@@ -13,13 +14,7 @@ module.exports = {
     darkMode: process.env.NODE_ENV === 'development' ? 'media' : 'class',
     important: true,
     theme: {
-        extend: {
-            colors: {
-                'klave-dark-blue': '#00021A',
-                'klave-light-blue': '#00BFFF',
-                'klave-cyan': '#00FFD5'
-            }
-        }
+        extend: {}
     },
     daisyui: process.env.NODE_ENV === 'development' ? {
         logs: true,
@@ -28,10 +23,5 @@ module.exports = {
         themes: false,
         darkTheme: 'light'
     },
-    plugins: [
-        require('@tailwindcss/typography'),
-        require('@tailwindcss/forms')({
-            strategy: 'class'
-        }),
-        require('daisyui')]
+    plugins: []
 };

@@ -55,6 +55,15 @@
                     "codeCoverage": true
                 }
             }
+        },
+        "build-storybook": {
+            "cache": true,
+            "inputs": [
+                "default",
+                "^production",
+                "{projectRoot}/.storybook/**/*",
+                "{projectRoot}/tsconfig.storybook.json"
+            ]
         }
     },
     "namedInputs": {
@@ -65,7 +74,10 @@
             "!{projectRoot}/tsconfig.spec.json",
             "!{projectRoot}/jest.config.[jt]s",
             "!{projectRoot}/.eslintrc.json",
-            "!{projectRoot}/src/test-setup.[jt]s"
+            "!{projectRoot}/src/test-setup.[jt]s",
+            "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
+            "!{projectRoot}/.storybook/**/*",
+            "!{projectRoot}/tsconfig.storybook.json"
         ],
         "sharedGlobals": ["{workspaceRoot}/babel.config.json"]
     },
@@ -93,5 +105,12 @@
         }
     },
     "defaultProject": "hubber",
-    "nxCloudAccessToken": "OWY1ZGY3MjEtOWIzMi00NjM1LWE2YTItZGJhYTE2NGEwNWZlfHJlYWQtd3JpdGU="
+    "nxCloudAccessToken": "OWY1ZGY3MjEtOWIzMi00NjM1LWE2YTItZGJhYTE2NGEwNWZlfHJlYWQtd3JpdGU=",
+    "tasksRunnerOptions": {
+        "default": {
+            "options": {
+                "cacheableOperations": ["build-storybook"]
+            }
+        }
+    }
 }

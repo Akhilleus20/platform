@@ -6,5 +6,10 @@
         {
             "path": "./tsconfig.eslint.json"
         }
-    ]
+    ],
+    "ts-node": {
+        "compilerOptions": {
+            "module": "commonjs"
+        }
+    }
 }
