@@ -1,24 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { UiComponents } from './ui-components';
+import { Button } from './button';
 
 import { within } from '@storybook/testing-library';
 import { expect } from '@storybook/jest';
 
-const meta: Meta<typeof UiComponents> = {
-    component: UiComponents,
-    title: 'UiComponents'
+const meta: Meta<typeof Button> = {
+    component: Button,
+    title: "Button",
 };
 export default meta;
-type Story = StoryObj<typeof UiComponents>;
+type Story = StoryObj<typeof Button>;
 
 export const Primary = {
-    args: {}
+    args: {},
 };
 
 export const Heading: Story = {
     args: {},
     play: async ({ canvasElement }) => {
         const canvas = within(canvasElement);
-        expect(canvas.getByText(/Welcome to UiComponents!/gi)).toBeTruthy();
-    }
+        expect(canvas.getByText(/Welcome to Button!/gi)).toBeTruthy();
+    },
 };
