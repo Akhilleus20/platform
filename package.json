@@ -155,6 +155,7 @@
         "@nx/node": "17.2.8",
         "@nx/playwright": "17.2.8",
         "@nx/react": "17.2.8",
+        "@nx/storybook": "17.2.0",
         "@nx/vite": "17.2.8",
         "@nx/web": "17.2.8",
         "@playwright/test": "^1.40.1",

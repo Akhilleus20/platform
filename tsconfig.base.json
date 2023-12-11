@@ -49,6 +49,9 @@
             ],
             "@klave/sdk": [
                 "libs/sdk/src/index.ts"
+            ],
+            "ui-components": [
+                "libs/ui-components/src/index.ts"
             ]
         }
     },
