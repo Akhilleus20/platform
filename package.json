@@ -161,6 +161,7 @@
         "@playwright/test": "^1.40.1",
         "@storybook/addon-essentials": "^7.5.3",
         "@storybook/addon-interactions": "^7.5.3",
+        "@storybook/addon-styling": "^1.3.7",
         "@storybook/core-server": "^7.5.3",
         "@storybook/jest": "^0.2.3",
         "@storybook/react-vite": "^7.5.3",
