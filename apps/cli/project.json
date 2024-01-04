@@ -14,7 +14,7 @@
                 "platform": "node",
                 "outputPath": "dist/apps/cli",
                 "format": [
-                    "cjs"
+                    "esm"
                 ],
                 "bundle": false,
                 "main": "apps/cli/src/index.ts",
@@ -22,6 +22,7 @@
                 "assets": [
                     "apps/cli/src/assets"
                 ],
+                "thirdParty": true,
                 "generatePackageJson": true,
                 "esbuildOptions": {
                     "sourcemap": true,

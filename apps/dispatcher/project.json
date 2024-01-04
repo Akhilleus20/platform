@@ -12,7 +12,7 @@
             "options": {
                 "outputPath": "dist/apps/dispatcher",
                 "format": [
-                    "cjs"
+                    "esm"
                 ],
                 "main": "apps/dispatcher/src/main.ts",
                 "tsConfig": "apps/dispatcher/tsconfig.app.json",
