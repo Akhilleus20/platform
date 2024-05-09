@@ -124,6 +124,7 @@
         "sanitize-filename": "1.6.3",
         "serialize-error": "8.1.0",
         "sigstore": "2.3.0",
+        "snyk-nodejs-lockfile-parser": "1.53.3",
         "strip-ansi": "7.1.0",
         "stripe": "15.4.0",
         "styled-components": "6.1.8",

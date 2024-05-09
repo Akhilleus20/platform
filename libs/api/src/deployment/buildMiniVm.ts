@@ -9,6 +9,7 @@ import type { Stats } from 'assemblyscript/dist/asc';
 import { Utils } from '@secretarium/connector';
 import { createCompiler } from '@klave/compiler';
 import type { Context } from 'probot';
+import { buildDepTree, LockfileType, PkgTree } from 'snyk-nodejs-lockfile-parser';
 import { DeploymentPushPayload } from '../types';
 import { Repo } from '@klave/db';
 import { dummyMap } from './dummyVmFs';
@@ -49,7 +50,8 @@ export class BuildMiniVM {
 
     private proxyAgent: HttpsProxyAgent<string> | undefined;
     private usedDependencies: BuildDependenciesManifest = {};
-    private dependencies: Record<string, string> = {};
+    private dependencies: Record<string, Array<string>> = {};
+    private dependenciesLocks: PkgTree | undefined;
 
     constructor(private options: {
         type: 'github';
@@ -83,7 +85,7 @@ export class BuildMiniVM {
             });
             try {
                 const fetchRoot = (atAbsoluteRoot ? '' : this.options.application?.rootDir ?? '').replace(/\/*$/g, '');
-                return await octokit.repos.getContent({
+                const fileDescriptor = await octokit.repos.getContent({
                     owner: repo.owner,
                     repo: repo.name,
                     ref: context.commit.ref,
@@ -92,6 +94,7 @@ export class BuildMiniVM {
                         format: 'raw+json'
                     }
                 });
+                return fileDescriptor;
             } catch (e) {
                 errorAcc.push(`Error downloading content from GihHub: ${e?.toString()}`);
             }
@@ -106,7 +109,29 @@ export class BuildMiniVM {
             try {
                 const comps = lastComponent.substring(1).split('/');
                 packageName = comps[0]?.startsWith('@') ? `${comps.shift()}/${comps.shift()}` : comps.shift() ?? '';
-                packageVersion = packageName ? this.dependencies?.[packageName] : undefined;
+                const packageVersionArray = packageName ? this.dependencies?.[packageName] : undefined;
+                packageVersion = packageVersionArray?.length === 1 ? packageVersionArray[0] : undefined;
+
+                if (!packageVersion) {
+                    console.log('Need to find correct version for package (multiple choices available):', packageName, packageVersionArray);
+                    let chainPackage: PkgTree['dependencies'][string] = {
+                        dependencies: this.dependenciesLocks?.dependencies
+                    };
+                    if (chainPackage) {
+                        let chainPackageName: string | undefined;
+                        components.forEach(comp => {
+                            const chainComps = comp.substring(1).split('/');
+                            chainPackageName = chainComps[0]?.startsWith('@') ? `${chainComps.shift()}/${chainComps.shift()}` : chainComps.shift() ?? '';
+                            const nextChainPackage = chainPackage.dependencies?.[chainPackageName ?? ''];
+                            if (nextChainPackage)
+                                chainPackage = nextChainPackage;
+                        });
+                    }
+
+                    if (chainPackage.name === packageName && chainPackage.version)
+                        packageVersion = chainPackage.version;
+                }
+
                 const filePath = comps.join('/');
                 let version = packageVersion ?? '';
                 let data = '';
@@ -114,6 +139,7 @@ export class BuildMiniVM {
                 const unpkgDomain = 'https://www.unpkg.com/';
                 const url = `${unpkgDomain}${packageName}${packageVersion ? `@${packageVersion}` : ''}/${filePath}`;
                 const urlHash = Utils.toHex(new Uint8Array(await webcrypto.subtle.digest('SHA-256', new TextEncoder().encode(url))));
+                console.log('URL:', url, urlHash);
                 const assetLocation = nodePath.resolve(`./.cache/klave/compiler/assets/${urlHash}`);
 
                 if (fs.existsSync(assetLocation)) {
@@ -232,10 +258,31 @@ export class BuildMiniVM {
     async getTSDependencies() {
 
         const packageJsonResponse = await this.getContent('package.json', true);
-        const packageJsonData = Array.isArray(packageJsonResponse.data) ? packageJsonResponse.data[0] : packageJsonResponse.data;
+        const packageJsonData = (Array.isArray(packageJsonResponse.data) ? packageJsonResponse.data[0] : packageJsonResponse.data)?.toString();
+
+        let lockData: string | undefined;
+        let lockDataType = LockfileType.yarn;
+
+        const yarnLockResponse = await this.getContent('yarn.lock', true);
+        lockData = (Array.isArray(yarnLockResponse.data) ? yarnLockResponse.data[0] : yarnLockResponse.data)?.toString();
+
+        if (!lockData) {
+            const packageLockResponse = await this.getContent('package-lock.json', true);
+            lockDataType = LockfileType.npm;
+            lockData = (Array.isArray(packageLockResponse.data) ? packageLockResponse.data[0] : packageLockResponse.data)?.toString();
+        }
+
+        if (!lockData) {
+            const pnpmLockResponse = await this.getContent('pnpm-lock.yaml', true);
+            lockDataType = LockfileType.pnpm;
+            lockData = (Array.isArray(pnpmLockResponse.data) ? pnpmLockResponse.data[0] : pnpmLockResponse.data)?.toString();
+        }
 
         if (!packageJsonData)
             throw new Error('No package.json found');
+
+        if (lockData)
+            this.dependenciesLocks = await buildDepTree(packageJsonData, lockData, true, lockDataType).catch(() => { return; }) ?? undefined;
 
         let packageJson: {
             optionalDependencies?: Record<string, string>;
@@ -252,6 +299,40 @@ export class BuildMiniVM {
 
         if (!packageJson)
             throw new Error('No package.json found');
+
+        const addDependencies = (deps: PkgTree['dependencies']) => {
+            Object.entries(deps).forEach(([name, dep]) => {
+                if (dep.version) {
+                    if (this.dependencies[name])
+                        this.dependencies[name]?.push(dep.version);
+                    else
+                        this.dependencies[name] = [dep.version];
+                }
+                if (dep.dependencies)
+                    addDependencies(dep.dependencies);
+            });
+        };
+
+        if (this.dependenciesLocks)
+            addDependencies(this.dependenciesLocks.dependencies);
+
+        const packageJsonDependencies = Object.entries({
+            ...packageJson.optionalDependencies,
+            ...packageJson.peerDependencies,
+            ...packageJson.devDependencies,
+            ...packageJson.dependencies
+        }).reduce((acc, [name, version]) => {
+            if (acc[name])
+                acc[name]?.push(version);
+            else
+                acc[name] = [version];
+            return acc;
+        }, {} as typeof this.dependencies);
+
+        Object.entries(packageJsonDependencies).forEach(([name, versions]) => {
+            const exitstingVersions = this.dependencies[name] ?? [];
+            this.dependencies[name] = exitstingVersions.concat(versions);
+        });
     }
 
     async build(): Promise<BuildOutput> {
