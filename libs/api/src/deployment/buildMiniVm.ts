@@ -50,7 +50,7 @@ export class BuildMiniVM {
 
     private proxyAgent: HttpsProxyAgent<string> | undefined;
     private usedDependencies: BuildDependenciesManifest = {};
-    private dependencies: Record<string, Array<string>> = {};
+    private dependencies: Record<string, Set<string>> = {};
     private dependenciesLocks: PkgTree | undefined;
 
     constructor(private options: {
@@ -100,7 +100,7 @@ export class BuildMiniVM {
             }
         }
 
-        const components = normalisedPath?.split('node_modules') ?? [];
+        const components = normalisedPath?.split('node_modules').filter(s => !!s) ?? [];
         const lastComponent = components.pop();
 
         if (lastComponent?.startsWith('/')) {
@@ -109,11 +109,11 @@ export class BuildMiniVM {
             try {
                 const comps = lastComponent.substring(1).split('/');
                 packageName = comps[0]?.startsWith('@') ? `${comps.shift()}/${comps.shift()}` : comps.shift() ?? '';
-                const packageVersionArray = packageName ? this.dependencies?.[packageName] : undefined;
-                packageVersion = packageVersionArray?.length === 1 ? packageVersionArray[0] : undefined;
+                const packageVersionSet = packageName ? this.dependencies?.[packageName] : undefined;
+                packageVersion = packageVersionSet?.size === 1 ? Array.from(packageVersionSet)[0] : undefined;
 
                 if (!packageVersion) {
-                    console.log('Need to find correct version for package (multiple choices available):', packageName, packageVersionArray);
+                    console.log('Need to find correct version for package (multiple choices available):', packageName, packageVersionSet);
                     let chainPackage: PkgTree['dependencies'][string] = {
                         dependencies: this.dependenciesLocks?.dependencies
                     };
@@ -127,10 +127,12 @@ export class BuildMiniVM {
                                 chainPackage = nextChainPackage;
                         });
                     }
-
                     if (chainPackage.name === packageName && chainPackage.version)
                         packageVersion = chainPackage.version;
                 }
+
+                if (!packageVersion)
+                    packageVersion = this.dependenciesLocks?.dependencies[packageName]?.version;
 
                 const filePath = comps.join('/');
                 let version = packageVersion ?? '';
@@ -304,9 +306,9 @@ export class BuildMiniVM {
             Object.entries(deps).forEach(([name, dep]) => {
                 if (dep.version) {
                     if (this.dependencies[name])
-                        this.dependencies[name]?.push(dep.version);
+                        this.dependencies[name]?.add(dep.version);
                     else
-                        this.dependencies[name] = [dep.version];
+                        this.dependencies[name] = new Set([dep.version]);
                 }
                 if (dep.dependencies)
                     addDependencies(dep.dependencies);
@@ -323,15 +325,15 @@ export class BuildMiniVM {
             ...packageJson.dependencies
         }).reduce((acc, [name, version]) => {
             if (acc[name])
-                acc[name]?.push(version);
+                acc[name]?.add(version);
             else
-                acc[name] = [version];
+                acc[name] = new Set([version]);
             return acc;
         }, {} as typeof this.dependencies);
 
         Object.entries(packageJsonDependencies).forEach(([name, versions]) => {
             const exitstingVersions = this.dependencies[name] ?? [];
-            this.dependencies[name] = exitstingVersions.concat(versions);
+            this.dependencies[name] = new Set([...exitstingVersions, ...versions]);
         });
     }
 
@@ -436,6 +438,10 @@ export class BuildMiniVM {
                             };
                             this.usedDependencies['assemblyscript'] = {
                                 version: compiler.ascVersion ?? message.version ?? 'unknown',
+                                digests: {}
+                            };
+                            this.usedDependencies['typescript'] = {
+                                version: compiler.tsVersion ?? 'unknown',
                                 digests: {}
                             };
                         } else if (message.type === 'read') {

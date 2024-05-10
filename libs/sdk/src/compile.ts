@@ -34,7 +34,7 @@ const compile = () => {
                     createCompiler().then((compiler: CompilerHost) => {
                         compiler.on('message', (message) => {
                             if (message.type === 'start') {
-                                console.log(`Using Klave compiler v${compiler.version}\nAssemblyScript v${compiler.ascVersion ?? message.version}`);
+                                console.log(`Using Klave compiler v${compiler.version}\nAssemblyScript v${compiler.ascVersion ?? message.version} - TypeScript v${compiler.tsVersion}`);
                             }
                             if (message.type === 'read') {
                                 if (process.env['DEBUG'] === 'true')

@@ -55,6 +55,7 @@ export class CompilerHost {
     id = uuid();
     version = localPackageJson.version;
     ascVersion = 'unknown';
+    tsVersion = 'unknown';
     entryFile = -1;
 
     constructor(private worker: Worker) { }
@@ -64,6 +65,7 @@ export class CompilerHost {
             this.worker.on('message', (message: CompilerMessage) => {
                 if (message.type === 'start') {
                     this.ascVersion = message.version;
+                    this.tsVersion = ts.version;
                 }
                 if (message.type === 'write') {
                     if (message.filename === 'out.d.ts' && message.contents) {
@@ -93,7 +95,6 @@ export class CompilerHost {
                         });
                         message.contents = filteredDTS;
                     }
-                    return listener(message);
                 }
                 if (message.type === 'read') {
                     if (message.filename === '..ts' ||
